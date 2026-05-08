@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tetris</title>
+<title>Tetris Complete</title>
 
 <style>
 *{
@@ -13,30 +13,65 @@
 }
 
 body{
-    height:100vh;
+    background:#0f172a;
     display:flex;
     justify-content:center;
     align-items:center;
-    background:#0f172a;
-    font-family:sans-serif;
+    height:100vh;
     overflow:hidden;
+    font-family:sans-serif;
+    touch-action:none;
+}
+
+/* HUD */
+#hud{
+    position:fixed;
+    top:10px;
+    left:10px;
+    color:white;
+    font-size:14px;
+    font-weight:bold;
+    background:rgba(0,0,0,0.4);
+    padding:8px 12px;
+    border-radius:10px;
+    z-index:10;
+}
+
+/* フロート */
+.float{
+    position:absolute;
+    color:white;
+    font-weight:bold;
+    animation:up .6s ease-out forwards;
+    pointer-events:none;
+}
+
+@keyframes up{
+    0%{opacity:1; transform:translateY(0);}
+    100%{opacity:0; transform:translateY(-30px);}
+}
+
+/* canvas */
+canvas{
+    background:black;
+    border:2px solid #334155;
 }
 
 /* ログイン */
-#loginScreen{
+#login{
     position:fixed;
     inset:0;
     display:flex;
     justify-content:center;
     align-items:center;
-    background:rgba(0,0,0,0.8);
-    z-index:10;
+    background:rgba(0,0,0,0.85);
+    z-index:100;
 }
 
-.login-box{
+.box{
     background:#111827;
-    padding:24px;
-    border-radius:16px;
+    padding:20px;
+    border-radius:14px;
     text-align:center;
     color:white;
     width:80%;
@@ -47,54 +82,44 @@ input{
     width:100%;
     padding:10px;
     margin:10px 0;
-    border-radius:8px;
     border:none;
-}
-
-/* ゲーム */
-.container{
-    display:flex;
-    gap:10px;
-}
-
-canvas{
-    background:black;
-    border:2px solid #334155;
+    border-radius:8px;
 }
 
 /* ボタン */
 .touch{
     display:grid;
-    grid-template-columns:repeat(3,60px);
+    grid-template-columns:repeat(3,70px);
     gap:8px;
     margin-top:10px;
     justify-content:center;
 }
 
 .touch button{
-    height:60px;
+    height:70px;
     border:none;
-    border-radius:10px;
+    border-radius:12px;
     background:#334155;
     color:white;
     font-size:20px;
-}
-
-/* スマホ */
-@media(max-width:600px){
-    body{
-        flex-direction:column;
-    }
+    touch-action:manipulation;
 }
 </style>
 </head>
 
 <body>
 
+<!-- HUD -->
+<div id="hud">
+SCORE:<span id="score">0</span>　
+LV:<span id="level">1</span>　
+BEST:<span id="best">0</span>
+</div>
+
 <!-- ログイン -->
-<div id="loginScreen">
-    <div class="login-box">
-        <h2>LOGIN</h2>
+<div id="login">
+    <div class="box">
+        <h3>LOGIN</h3>
         <input id="name" placeholder="NAME">
         <button id="start">START</button>
     </div>
@@ -113,21 +138,20 @@ canvas{
 </div>
 
 <script>
-const COLS = 10;
-const ROWS = 20;
-const BLOCK = 24;
+const COLS=10, ROWS=20, BLOCK=24;
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-canvas.width = COLS * BLOCK;
-canvas.height = ROWS * BLOCK;
+canvas.width=COLS*BLOCK;
+canvas.height=ROWS*BLOCK;
 
-const board = Array.from({length:ROWS},()=>Array(COLS).fill(0));
+/* ---------------- BOARD ---------------- */
+const board=Array.from({length:ROWS},()=>Array(COLS).fill(0));
 
-const colors = [null,"cyan","blue","orange","yellow","green","purple","red"];
+const colors=[null,"cyan","blue","orange","yellow","green","purple","red"];
 
-const pieces = [
+const pieces=[
 [],
 [[1,1,1,1]],
 [[2,0,0],[2,2,2]],
@@ -138,13 +162,29 @@ const pieces = [
 [[7,7,0],[0,7,7]]
 ];
 
-let player = {
-    x:0,y:0,
-    m:null
-};
+/* ---------------- PLAYER ---------------- */
+let player={x:0,y:0,m:null};
 
+/* ---------------- SYSTEM ---------------- */
 let drop=0,last=0;
+let dropInterval=600;
 
+let score=0;
+let lines=0;
+let level=1;
+let combo=0;
+
+/* BEST */
+let best=localStorage.getItem("best")||0;
+
+/* ---------------- HUD ---------------- */
+const scoreEl=document.getElementById("score");
+const levelEl=document.getElementById("level");
+const bestEl=document.getElementById("best");
+
+bestEl.textContent=best;
+
+/* ---------------- DRAW ---------------- */
 function drawBlock(x,y,c){
     ctx.fillStyle=c;
     ctx.fillRect(x*BLOCK,y*BLOCK,BLOCK,BLOCK);
@@ -166,6 +206,7 @@ function draw(){
     });
 }
 
+/* ---------------- COLLIDE ---------------- */
 function collide(){
     for(let y=0;y<player.m.length;y++){
         for(let x=0;x<player.m[y].length;x++){
@@ -181,6 +222,7 @@ function collide(){
     return false;
 }
 
+/* ---------------- MERGE ---------------- */
 function merge(){
     player.m.forEach((r,y)=>{
         r.forEach((v,x)=>{
@@ -191,38 +233,124 @@ function merge(){
     });
 }
 
+/* ---------------- ROTATE ---------------- */
 function rotate(m){
     return m[0].map((_,i)=>m.map(r=>r[i]).reverse());
 }
 
-function reset(){
-    player.m = pieces[Math.random()*7|0+1];
-    player.x = 3;
-    player.y = 0;
-    if(collide()) location.reload();
+/* ---------------- SCORE ---------------- */
+function addScore(n){
+
+    const table=[0,100,300,500,800];
+
+    combo++;
+
+    score+=table[n]+(combo>1?combo*50:0);
+
+    scoreEl.textContent=score;
+
+    if(score>best){
+        best=score;
+        localStorage.setItem("best",best);
+        bestEl.textContent=best;
+    }
 }
 
+/* ---------------- CLEAR LINES ---------------- */
+function clearLines(){
+
+    let cleared=0;
+
+    for(let y=ROWS-1;y>=0;y--){
+
+        let full=true;
+
+        for(let x=0;x<COLS;x++){
+            if(board[y][x]===0){
+                full=false;
+                break;
+            }
+        }
+
+        if(full){
+            board.splice(y,1);
+            board.unshift(Array(COLS).fill(0));
+            cleared++;
+            lines++;
+            y++;
+        }
+    }
+
+    if(cleared>0){
+
+        addScore(cleared);
+
+        level=Math.floor(lines/10)+1;
+        levelEl.textContent=level;
+
+        dropInterval=Math.max(100,600-(level-1)*50);
+
+        combo=0;
+
+        float("+LINE");
+    }
+}
+
+/* ---------------- FLOAT ---------------- */
+function float(text){
+
+    const d=document.createElement("div");
+
+    d.className="float";
+    d.textContent=text;
+
+    d.style.left="120px";
+    d.style.top="200px";
+
+    document.body.appendChild(d);
+
+    setTimeout(()=>d.remove(),600);
+}
+
+/* ---------------- DROP ---------------- */
 function dropPiece(){
+
     player.y++;
+
     if(collide()){
         player.y--;
         merge();
+        clearLines();
         reset();
     }
 }
 
+/* ---------------- RESET ---------------- */
+function reset(){
+
+    player.m=pieces[(Math.random()*7|0)+1];
+    player.x=3;
+    player.y=0;
+
+    if(collide()) location.reload();
+}
+
+/* ---------------- LOOP ---------------- */
 function update(t=0){
-    drop += t-last;
-    last = t;
-    if(drop>600){
+
+    drop+=t-last;
+    last=t;
+
+    if(drop>dropInterval){
         dropPiece();
         drop=0;
     }
+
     draw();
     requestAnimationFrame(update);
 }
 
-/* 操作 */
+/* ---------------- CONTROLS ---------------- */
 document.addEventListener("keydown",e=>{
     if(e.key=="ArrowLeft") player.x--;
     if(e.key=="ArrowRight") player.x++;
@@ -230,15 +358,17 @@ document.addEventListener("keydown",e=>{
     if(e.key=="ArrowDown") dropPiece();
 });
 
-/* タッチ */
-left.onclick=()=>player.x--;
-right.onclick=()=>player.x++;
-rot.onclick=()=>player.m=rotate(player.m);
-down.onclick=()=>dropPiece();
+/* TOUCH */
+left.ontouchstart=()=>player.x--;
+right.ontouchstart=()=>player.x++;
+rot.ontouchstart=()=>player.m=rotate(player.m);
+down.ontouchstart=()=>dropPiece();
 
-/* ログイン */
+/* ---------------- LOGIN ---------------- */
 start.onclick=()=>{
-    document.getElementById("loginScreen").style.display="none";
+
+    login.style.display="none";
+
     reset();
     update();
 };
