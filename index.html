@@ -24,9 +24,11 @@ body{
         radial-gradient(circle at bottom right,#7c3aed,#020617 35%);
 
     font-family:sans-serif;
+
+    touch-action:none;
 }
 
-/* 背景の粒 */
+/* 背景粒子 */
 body::before{
     content:"";
     position:fixed;
@@ -52,6 +54,101 @@ body::before{
     to{
         transform:translateY(48px);
     }
+}
+
+/* ログイン画面 */
+
+.login-screen{
+    position:fixed;
+    inset:0;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    background:
+        radial-gradient(
+            circle at top left,
+            rgba(37,99,235,0.45),
+            rgba(2,6,23,0.92)
+        ),
+        radial-gradient(
+            circle at bottom right,
+            rgba(124,58,237,0.35),
+            rgba(2,6,23,0.95)
+        );
+
+    backdrop-filter:blur(12px);
+
+    z-index:9999;
+
+    transition:0.4s;
+}
+
+.login-box{
+
+    width:min(90vw,420px);
+
+    padding:42px 32px;
+
+    border-radius:32px;
+
+    text-align:center;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(255,255,255,0.12),
+            rgba(255,255,255,0.04)
+        );
+
+    border:1px solid rgba(255,255,255,0.15);
+
+    box-shadow:
+        0 12px 50px rgba(0,0,0,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+.login-box h1{
+
+    color:white;
+
+    font-size:52px;
+    font-weight:900;
+
+    letter-spacing:4px;
+
+    margin-bottom:28px;
+
+    text-shadow:
+        0 0 20px rgba(96,165,250,0.5);
+}
+
+.login-box input{
+
+    width:100%;
+
+    padding:18px 20px;
+
+    border:none;
+    outline:none;
+
+    border-radius:18px;
+
+    font-size:18px;
+
+    color:white;
+
+    background:
+        rgba(255,255,255,0.08);
+
+    border:1px solid rgba(255,255,255,0.1);
+
+    margin-bottom:22px;
+}
+
+.login-box input::placeholder{
+    color:rgba(255,255,255,0.45);
 }
 
 .container{
@@ -103,9 +200,6 @@ canvas{
     font-size:42px;
     font-weight:900;
     letter-spacing:5px;
-
-    text-shadow:
-        0 0 18px rgba(96,165,250,0.5);
 }
 
 .panel{
@@ -158,10 +252,6 @@ canvas{
 .game-over h1{
     color:white;
     font-size:84px;
-
-    text-shadow:
-        0 0 20px rgba(255,255,255,0.4),
-        0 0 40px rgba(96,165,250,0.5);
 }
 
 button{
@@ -184,19 +274,106 @@ button{
     font-weight:bold;
 
     cursor:pointer;
-
-    box-shadow:
-        0 4px 18px rgba(59,130,246,0.35);
-
-    transition:0.2s;
 }
 
-button:hover{
-    transform:scale(1.05);
+/* スマホ操作 */
+
+.touch-controls{
+    display:none;
+}
+
+@media (max-width:768px){
+
+    body{
+        padding:12px;
+        align-items:flex-start;
+    }
+
+    .container{
+        flex-direction:column;
+        align-items:center;
+        width:100%;
+    }
+
+    canvas{
+        width:min(92vw,360px);
+        height:auto;
+    }
+
+    .sidebar{
+        width:100%;
+        max-width:360px;
+    }
+
+    .touch-controls{
+
+        display:grid;
+
+        grid-template-columns:
+            repeat(3,80px);
+
+        gap:14px;
+
+        justify-content:center;
+    }
+
+    .tc-btn{
+
+        width:80px;
+        height:80px;
+
+        border:none;
+        border-radius:22px;
+
+        font-size:32px;
+        font-weight:bold;
+
+        color:white;
+
+        background:
+            linear-gradient(
+                135deg,
+                rgba(59,130,246,0.85),
+                rgba(139,92,246,0.85)
+            );
+    }
+
+    .down{
+        grid-column:2;
+    }
+
+    .game-over h1{
+        font-size:48px;
+    }
 }
 </style>
 </head>
 <body>
+
+<!-- ログイン -->
+
+<div class="login-screen" id="loginScreen">
+
+    <div class="login-box">
+
+        <h1>SHARP<br>TETRIS</h1>
+
+        <input
+            type="text"
+            id="playerName"
+            placeholder="YOUR NAME"
+            maxlength="12"
+        />
+
+        <button id="startBtn">
+            START GAME
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ゲーム -->
 
 <div class="container">
 
@@ -209,6 +386,13 @@ button:hover{
         </div>
 
         <div class="panel">
+            <div class="label">PLAYER</div>
+            <div class="value" id="playerDisplay">
+                ---
+            </div>
+        </div>
+
+        <div class="panel">
             <div class="label">SCORE</div>
             <div class="value" id="score">0</div>
         </div>
@@ -218,15 +402,25 @@ button:hover{
             <div class="value" id="lines">0</div>
         </div>
 
-        <div class="panel controls">
-            ← → MOVE<br>
-            ↑ ROTATE<br>
-            ↓ DROP
-        </div>
-
     </div>
 
 </div>
+
+<!-- スマホ操作 -->
+
+<div class="touch-controls">
+
+    <button class="tc-btn" id="leftBtn">◀</button>
+
+    <button class="tc-btn" id="rotateBtn">⟳</button>
+
+    <button class="tc-btn" id="rightBtn">▶</button>
+
+    <button class="tc-btn down" id="downBtn">▼</button>
+
+</div>
+
+<!-- GAME OVER -->
 
 <div class="game-over" id="gameOver">
 
@@ -266,36 +460,12 @@ const colors = [
 const pieces = [
 [],
 [[1,1,1,1]],
-
-[
-[2,0,0],
-[2,2,2]
-],
-
-[
-[0,0,3],
-[3,3,3]
-],
-
-[
-[4,4],
-[4,4]
-],
-
-[
-[0,5,5],
-[5,5,0]
-],
-
-[
-[0,6,0],
-[6,6,6]
-],
-
-[
-[7,7,0],
-[0,7,7]
-]
+[[2,0,0],[2,2,2]],
+[[0,0,3],[3,3,3]],
+[[4,4],[4,4]],
+[[0,5,5],[5,5,0]],
+[[0,6,0],[6,6,6]],
+[[7,7,0],[0,7,7]]
 ];
 
 const player = {
@@ -308,11 +478,9 @@ let lines = 0;
 
 function drawBlock(x,y,color){
 
-    // 外側
     ctx.fillStyle = color;
     ctx.fillRect(x,y,1,1);
 
-    // 上の光
     ctx.fillStyle =
         "rgba(255,255,255,0.35)";
 
@@ -322,36 +490,6 @@ function drawBlock(x,y,color){
         0.9,
         0.18
     );
-
-    // 左の光
-    ctx.fillStyle =
-        "rgba(255,255,255,0.18)";
-
-    ctx.fillRect(
-        x + 0.05,
-        y + 0.05,
-        0.12,
-        0.9
-    );
-
-    // 下の影
-    ctx.fillStyle =
-        "rgba(0,0,0,0.28)";
-
-    ctx.fillRect(
-        x,
-        y + 0.82,
-        1,
-        0.18
-    );
-
-    // 枠
-    ctx.strokeStyle =
-        "rgba(255,255,255,0.12)";
-
-    ctx.lineWidth = 0.04;
-
-    ctx.strokeRect(x,y,1,1);
 }
 
 function draw(){
@@ -362,23 +500,6 @@ function draw(){
         canvas.width,
         canvas.height
     );
-
-    // グリッド背景
-    for(let y=0;y<ROWS;y++){
-
-        for(let x=0;x<COLS;x++){
-
-            ctx.fillStyle =
-                "rgba(255,255,255,0.03)";
-
-            ctx.fillRect(x,y,1,1);
-
-            ctx.strokeStyle =
-                "rgba(255,255,255,0.02)";
-
-            ctx.strokeRect(x,y,1,1);
-        }
-    }
 
     board.forEach((row,y)=>{
 
@@ -417,12 +538,15 @@ function collide(){
 
         for(let x=0;x<player.matrix[y].length;x++){
 
+            const row =
+                board[y + player.pos.y];
+
             if(
                 player.matrix[y][x] !== 0 &&
                 (
-                    board[y + player.pos.y] &&
-                    board[y + player.pos.y][x + player.pos.x]
-                ) !== 0
+                    !row ||
+                    row[x + player.pos.x] !== 0
+                )
             ){
                 return true;
             }
@@ -586,6 +710,8 @@ function update(time=0){
     requestAnimationFrame(update);
 }
 
+/* キーボード */
+
 document.addEventListener("keydown",e=>{
 
     if(e.key==="ArrowLeft"){
@@ -605,8 +731,86 @@ document.addEventListener("keydown",e=>{
     }
 });
 
-resetPlayer();
-update();
+/* タッチ操作 */
+
+document
+.getElementById("leftBtn")
+.addEventListener("touchstart",e=>{
+
+    e.preventDefault();
+    playerMove(-1);
+});
+
+document
+.getElementById("rightBtn")
+.addEventListener("touchstart",e=>{
+
+    e.preventDefault();
+    playerMove(1);
+});
+
+document
+.getElementById("rotateBtn")
+.addEventListener("touchstart",e=>{
+
+    e.preventDefault();
+    playerRotate();
+});
+
+document
+.getElementById("downBtn")
+.addEventListener("touchstart",e=>{
+
+    e.preventDefault();
+    playerDrop();
+});
+
+/* ログイン */
+
+let playerName = "";
+
+document
+.getElementById("startBtn")
+.addEventListener("click",startGame);
+
+document
+.getElementById("playerName")
+.addEventListener("keydown",e=>{
+
+    if(e.key === "Enter"){
+        startGame();
+    }
+});
+
+function startGame(){
+
+    const input =
+        document
+        .getElementById("playerName");
+
+    playerName =
+        input.value.trim() || "PLAYER";
+
+    document
+        .getElementById("playerDisplay")
+        .textContent = playerName;
+
+    const login =
+        document
+        .getElementById("loginScreen");
+
+    login.style.opacity = "0";
+
+    setTimeout(()=>{
+
+        login.style.display = "none";
+
+        resetPlayer();
+
+        update();
+
+    },400);
+}
 </script>
 
 </body>
