@@ -1,378 +1,316 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tetris Complete</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>テトリス</title>
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
 body{
-    background:#0f172a;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-    overflow:hidden;
-    font-family:sans-serif;
-    touch-action:none;
+  margin:0;
+  background:#111;
+  color:white;
+  text-align:center;
+  font-family:sans-serif;
 }
-
-/* HUD */
-#hud{
-    position:fixed;
-    top:10px;
-    left:10px;
-    color:white;
-    font-size:14px;
-    font-weight:bold;
-    background:rgba(0,0,0,0.4);
-    padding:8px 12px;
-    border-radius:10px;
-    z-index:10;
-}
-
-/* フロート */
-.float{
-    position:absolute;
-    color:white;
-    font-weight:bold;
-    animation:up .6s ease-out forwards;
-    pointer-events:none;
-}
-
-@keyframes up{
-    0%{opacity:1; transform:translateY(0);}
-    100%{opacity:0; transform:translateY(-30px);}
-}
-
-/* canvas */
 canvas{
-    background:black;
-    border:2px solid #334155;
+  background:#222;
+  border:4px solid white;
+  display:block;
+  margin:10px auto;
 }
-
-/* ログイン */
-#login{
-    position:fixed;
-    inset:0;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    background:rgba(0,0,0,0.85);
-    z-index:100;
+button{
+  padding:12px 24px;
+  font-size:20px;
 }
-
-.box{
-    background:#111827;
-    padding:20px;
-    border-radius:14px;
-    text-align:center;
-    color:white;
-    width:80%;
-    max-width:300px;
+#controls{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-top:10px;
 }
-
-input{
-    width:100%;
-    padding:10px;
-    margin:10px 0;
-    border:none;
-    border-radius:8px;
-}
-
-/* ボタン */
-.touch{
-    display:grid;
-    grid-template-columns:repeat(3,70px);
-    gap:8px;
-    margin-top:10px;
-    justify-content:center;
-}
-
-.touch button{
-    height:70px;
-    border:none;
-    border-radius:12px;
-    background:#334155;
-    color:white;
-    font-size:20px;
-    touch-action:manipulation;
+.ctrl{
+  width:70px;
+  height:70px;
+  font-size:28px;
 }
 </style>
 </head>
-
 <body>
 
-<!-- HUD -->
-<div id="hud">
-SCORE:<span id="score">0</span>　
-LV:<span id="level">1</span>　
-BEST:<span id="best">0</span>
-</div>
+<h1>🎮 テトリス</h1>
+<button onclick="startGame()">START</button>
+<p id="score">Score : 0</p>
 
-<!-- ログイン -->
-<div id="login">
-    <div class="box">
-        <h3>LOGIN</h3>
-        <input id="name" placeholder="NAME">
-        <button id="start">START</button>
-    </div>
-</div>
+<canvas id="game" width="300" height="600"></canvas>
 
-<!-- ゲーム -->
-<div>
-    <canvas id="game"></canvas>
-
-    <div class="touch">
-        <button id="left">◀</button>
-        <button id="rot">⟳</button>
-        <button id="right">▶</button>
-        <button id="down">▼</button>
-    </div>
+<div id="controls">
+  <button class="ctrl" onclick="move(-1)">⬅️</button>
+  <button class="ctrl" onclick="rotatePiece()">🔄</button>
+  <button class="ctrl" onclick="move(1)">➡️</button>
+  <button class="ctrl" onclick="drop()">⬇️</button>
 </div>
 
 <script>
-const COLS=10, ROWS=20, BLOCK=24;
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
 
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+const COLS = 10;
+const ROWS = 20;
+const SIZE = 30;
 
-canvas.width=COLS*BLOCK;
-canvas.height=ROWS*BLOCK;
+let board = [];
+let current = null;
+let running = false;
+let score = 0;
 
-/* ---------------- BOARD ---------------- */
-const board=Array.from({length:ROWS},()=>Array(COLS).fill(0));
-
-const colors=[null,"cyan","blue","orange","yellow","green","purple","red"];
-
-const pieces=[
-[],
-[[1,1,1,1]],
-[[2,0,0],[2,2,2]],
-[[0,0,3],[3,3,3]],
-[[4,4],[4,4]],
-[[0,5,5],[5,5,0]],
-[[0,6,0],[6,6,6]],
-[[7,7,0],[0,7,7]]
+const pieces = [
+  [[1,1,1],[0,1,0]],
+  [[1,1],[1,1]],
+  [[1,1,1,1]],
+  [[1,1,0],[0,1,1]],
+  [[0,1,1],[1,1,0]],
+  [[1,0,0],[1,1,1]],
+  [[0,0,1],[1,1,1]]
 ];
 
-/* ---------------- PLAYER ---------------- */
-let player={x:0,y:0,m:null};
+const colors = [
+  'red','yellow','cyan','lime','magenta','orange','blue'
+];
 
-/* ---------------- SYSTEM ---------------- */
-let drop=0,last=0;
-let dropInterval=600;
+function createBoard(){
+  board = [];
 
-let score=0;
-let lines=0;
-let level=1;
-let combo=0;
+  for(let y=0;y<ROWS;y++){
+    let row = [];
 
-/* BEST */
-let best=localStorage.getItem("best")||0;
+    for(let x=0;x<COLS;x++){
+      row.push(0);
+    }
 
-/* ---------------- HUD ---------------- */
-const scoreEl=document.getElementById("score");
-const levelEl=document.getElementById("level");
-const bestEl=document.getElementById("best");
+    board.push(row);
+  }
+}
 
-bestEl.textContent=best;
+function newPiece(){
+  const id = Math.floor(Math.random()*pieces.length);
 
-/* ---------------- DRAW ---------------- */
-function drawBlock(x,y,c){
-    ctx.fillStyle=c;
-    ctx.fillRect(x*BLOCK,y*BLOCK,BLOCK,BLOCK);
+  current = {
+    x:3,
+    y:0,
+    shape:pieces[id],
+    color:colors[id]
+  };
+}
+
+function startGame(){
+  createBoard();
+  newPiece();
+
+  score = 0;
+  document.getElementById('score').innerText = 'Score : 0';
+
+  running = true;
+}
+
+function collide(){
+  for(let y=0;y<current.shape.length;y++){
+    for(let x=0;x<current.shape[y].length;x++){
+
+      if(current.shape[y][x]){
+
+        const nx = current.x + x;
+        const ny = current.y + y;
+
+        if(
+          nx < 0 ||
+          nx >= COLS ||
+          ny >= ROWS ||
+          (ny >= 0 && board[ny][nx])
+        ){
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+function merge(){
+  current.shape.forEach((row,y)=>{
+    row.forEach((value,x)=>{
+
+      if(value){
+        board[current.y+y][current.x+x] = current.color;
+      }
+
+    });
+  });
+}
+
+function clearLines(){
+  for(let y=ROWS-1;y>=0;y--){
+
+    let full = true;
+
+    for(let x=0;x<COLS;x++){
+      if(!board[y][x]){
+        full = false;
+      }
+    }
+
+    if(full){
+      board.splice(y,1);
+
+      let row = [];
+      for(let i=0;i<COLS;i++){
+        row.push(0);
+      }
+
+      board.unshift(row);
+
+      score += 100;
+
+      document.getElementById('score').innerText = 'Score : ' + score;
+    }
+  }
+}
+
+function drop(){
+  if(!running) return;
+
+  current.y++;
+
+  if(collide()){
+
+    current.y--;
+
+    merge();
+    clearLines();
+    newPiece();
+  }
+}
+
+function move(dir){
+  if(!running) return;
+
+  current.x += dir;
+
+  if(collide()){
+    current.x -= dir;
+  }
+}
+
+function rotatePiece(){
+  if(!running) return;
+
+  const old = current.shape;
+  let rotated = [];
+
+  for(let x=0;x<old[0].length;x++){
+
+    rotated[x] = [];
+
+    for(let y=old.length-1;y>=0;y--){
+      rotated[x].push(old[y][x]);
+    }
+  }
+
+  current.shape = rotated;
+
+  if(collide()){
+    current.shape = old;
+  }
+}
+
+function drawBlock(x,y,color){
+  ctx.fillStyle = color;
+
+  ctx.fillRect(
+    x*SIZE,
+    y*SIZE,
+    SIZE,
+    SIZE
+  );
+
+  ctx.strokeStyle = '#111';
+
+  ctx.strokeRect(
+    x*SIZE,
+    y*SIZE,
+    SIZE,
+    SIZE
+  );
 }
 
 function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    board.forEach((r,y)=>{
-        r.forEach((v,x)=>{
-            if(v) drawBlock(x,y,colors[v]);
-        });
-    });
+  for(let y=0;y<ROWS;y++){
+    for(let x=0;x<COLS;x++){
 
-    player.m.forEach((r,y)=>{
-        r.forEach((v,x)=>{
-            if(v) drawBlock(x+player.x,y+player.y,colors[v]);
-        });
-    });
-}
-
-/* ---------------- COLLIDE ---------------- */
-function collide(){
-    for(let y=0;y<player.m.length;y++){
-        for(let x=0;x<player.m[y].length;x++){
-            if(
-                player.m[y][x] &&
-                (!board[y+player.y] ||
-                board[y+player.y][x+player.x])
-            ){
-                return true;
-            }
-        }
+      if(board[y][x]){
+        drawBlock(x,y,board[y][x]);
+      }
     }
-    return false;
-}
+  }
 
-/* ---------------- MERGE ---------------- */
-function merge(){
-    player.m.forEach((r,y)=>{
-        r.forEach((v,x)=>{
-            if(v){
-                board[y+player.y][x+player.x]=v;
-            }
-        });
-    });
-}
+  if(current){
 
-/* ---------------- ROTATE ---------------- */
-function rotate(m){
-    return m[0].map((_,i)=>m.map(r=>r[i]).reverse());
-}
+    current.shape.forEach((row,y)=>{
+      row.forEach((value,x)=>{
 
-/* ---------------- SCORE ---------------- */
-function addScore(n){
-
-    const table=[0,100,300,500,800];
-
-    combo++;
-
-    score+=table[n]+(combo>1?combo*50:0);
-
-    scoreEl.textContent=score;
-
-    if(score>best){
-        best=score;
-        localStorage.setItem("best",best);
-        bestEl.textContent=best;
-    }
-}
-
-/* ---------------- CLEAR LINES ---------------- */
-function clearLines(){
-
-    let cleared=0;
-
-    for(let y=ROWS-1;y>=0;y--){
-
-        let full=true;
-
-        for(let x=0;x<COLS;x++){
-            if(board[y][x]===0){
-                full=false;
-                break;
-            }
+        if(value){
+          drawBlock(
+            current.x+x,
+            current.y+y,
+            current.color
+          );
         }
 
-        if(full){
-            board.splice(y,1);
-            board.unshift(Array(COLS).fill(0));
-            cleared++;
-            lines++;
-            y++;
-        }
+      });
+    });
+  }
+}
+
+let dropTimer = 0;
+let last = 0;
+
+function update(time=0){
+
+  const delta = time - last;
+  last = time;
+
+  if(running){
+
+    dropTimer += delta;
+
+    if(dropTimer > 700){
+      drop();
+      dropTimer = 0;
     }
+  }
 
-    if(cleared>0){
+  draw();
 
-        addScore(cleared);
-
-        level=Math.floor(lines/10)+1;
-        levelEl.textContent=level;
-
-        dropInterval=Math.max(100,600-(level-1)*50);
-
-        combo=0;
-
-        float("+LINE");
-    }
+  requestAnimationFrame(update);
 }
 
-/* ---------------- FLOAT ---------------- */
-function float(text){
+// キーボード
 
-    const d=document.createElement("div");
+document.addEventListener('keydown', e=>{
 
-    d.className="float";
-    d.textContent=text;
+  if(e.key==='ArrowLeft') move(-1);
+  if(e.key==='ArrowRight') move(1);
+  if(e.key==='ArrowDown') drop();
+  if(e.key==='ArrowUp') rotatePiece();
 
-    d.style.left="120px";
-    d.style.top="200px";
-
-    document.body.appendChild(d);
-
-    setTimeout(()=>d.remove(),600);
-}
-
-/* ---------------- DROP ---------------- */
-function dropPiece(){
-
-    player.y++;
-
-    if(collide()){
-        player.y--;
-        merge();
-        clearLines();
-        reset();
-    }
-}
-
-/* ---------------- RESET ---------------- */
-function reset(){
-
-    player.m=pieces[(Math.random()*7|0)+1];
-    player.x=3;
-    player.y=0;
-
-    if(collide()) location.reload();
-}
-
-/* ---------------- LOOP ---------------- */
-function update(t=0){
-
-    drop+=t-last;
-    last=t;
-
-    if(drop>dropInterval){
-        dropPiece();
-        drop=0;
-    }
-
-    draw();
-    requestAnimationFrame(update);
-}
-
-/* ---------------- CONTROLS ---------------- */
-document.addEventListener("keydown",e=>{
-    if(e.key=="ArrowLeft") player.x--;
-    if(e.key=="ArrowRight") player.x++;
-    if(e.key=="ArrowUp") player.m=rotate(player.m);
-    if(e.key=="ArrowDown") dropPiece();
 });
 
-/* TOUCH */
-left.ontouchstart=()=>player.x--;
-right.ontouchstart=()=>player.x++;
-rot.ontouchstart=()=>player.m=rotate(player.m);
-down.ontouchstart=()=>dropPiece();
-
-/* ---------------- LOGIN ---------------- */
-start.onclick=()=>{
-
-    login.style.display="none";
-
-    reset();
-    update();
-};
+createBoard();
+update();
 </script>
 
 </body>
 </html>
+
