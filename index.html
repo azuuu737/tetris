@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Sharp Glass Tetris</title>
+<title>Tetris</title>
 
 <style>
 *{
@@ -13,449 +13,119 @@
 }
 
 body{
-    overflow:hidden;
     height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
-
-    background:
-        radial-gradient(circle at top left,#2563eb,#0f172a 35%),
-        radial-gradient(circle at bottom right,#7c3aed,#020617 35%);
-
+    background:#0f172a;
     font-family:sans-serif;
-
-    touch-action:none;
+    overflow:hidden;
 }
 
-/* 背景粒子 */
-body::before{
-    content:"";
+/* ログイン */
+#loginScreen{
     position:fixed;
     inset:0;
-
-    background-image:
-        radial-gradient(
-            rgba(255,255,255,0.8) 1px,
-            transparent 1px
-        );
-
-    background-size:48px 48px;
-
-    opacity:0.08;
-
-    animation:moveBg 12s linear infinite;
-}
-
-@keyframes moveBg{
-    from{
-        transform:translateY(0);
-    }
-    to{
-        transform:translateY(48px);
-    }
-}
-
-/* ログイン画面 */
-
-.login-screen{
-    position:fixed;
-    inset:0;
-
     display:flex;
     justify-content:center;
     align-items:center;
-
-    background:
-        radial-gradient(
-            circle at top left,
-            rgba(37,99,235,0.45),
-            rgba(2,6,23,0.92)
-        ),
-        radial-gradient(
-            circle at bottom right,
-            rgba(124,58,237,0.35),
-            rgba(2,6,23,0.95)
-        );
-
-    backdrop-filter:blur(12px);
-
-    z-index:9999;
-
-    transition:0.4s;
+    background:rgba(0,0,0,0.8);
+    z-index:10;
 }
 
 .login-box{
-
-    width:min(90vw,420px);
-
-    padding:42px 32px;
-
-    border-radius:32px;
-
+    background:#111827;
+    padding:24px;
+    border-radius:16px;
     text-align:center;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255,255,255,0.12),
-            rgba(255,255,255,0.04)
-        );
-
-    border:1px solid rgba(255,255,255,0.15);
-
-    box-shadow:
-        0 12px 50px rgba(0,0,0,0.45),
-        inset 0 1px 0 rgba(255,255,255,0.12);
-}
-
-.login-box h1{
-
     color:white;
-
-    font-size:52px;
-    font-weight:900;
-
-    letter-spacing:4px;
-
-    margin-bottom:28px;
-
-    text-shadow:
-        0 0 20px rgba(96,165,250,0.5);
+    width:80%;
+    max-width:300px;
 }
 
-.login-box input{
-
+input{
     width:100%;
-
-    padding:18px 20px;
-
+    padding:10px;
+    margin:10px 0;
+    border-radius:8px;
     border:none;
-    outline:none;
-
-    border-radius:18px;
-
-    font-size:18px;
-
-    color:white;
-
-    background:
-        rgba(255,255,255,0.08);
-
-    border:1px solid rgba(255,255,255,0.1);
-
-    margin-bottom:22px;
 }
 
-.login-box input::placeholder{
-    color:rgba(255,255,255,0.45);
-}
-
+/* ゲーム */
 .container{
     display:flex;
-    gap:24px;
-
-    padding:24px;
-
-    border-radius:28px;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255,255,255,0.12),
-            rgba(255,255,255,0.04)
-        );
-
-    border:1px solid rgba(255,255,255,0.16);
-
-    backdrop-filter:blur(12px);
-
-    box-shadow:
-        0 10px 40px rgba(0,0,0,0.45),
-        inset 0 1px 0 rgba(255,255,255,0.15);
+    gap:10px;
 }
 
 canvas{
-    background:#020617;
-
-    border-radius:18px;
-
-    border:2px solid rgba(255,255,255,0.08);
-
-    box-shadow:
-        inset 0 0 20px rgba(255,255,255,0.04),
-        0 0 25px rgba(59,130,246,0.15);
+    background:black;
+    border:2px solid #334155;
 }
 
-.sidebar{
-    width:220px;
-
-    display:flex;
-    flex-direction:column;
-    gap:18px;
-}
-
-.logo{
-    color:white;
-    font-size:42px;
-    font-weight:900;
-    letter-spacing:5px;
-}
-
-.panel{
-    border-radius:20px;
-
-    padding:18px;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255,255,255,0.12),
-            rgba(255,255,255,0.05)
-        );
-
-    border:1px solid rgba(255,255,255,0.12);
-
-    color:white;
-}
-
-.label{
-    color:rgba(255,255,255,0.65);
-    font-size:13px;
-    margin-bottom:8px;
-}
-
-.value{
-    font-size:34px;
-    font-weight:800;
-}
-
-.controls{
-    color:#ddd;
-    line-height:2;
-}
-
-.game-over{
-    position:fixed;
-    inset:0;
-
-    display:none;
+/* ボタン */
+.touch{
+    display:grid;
+    grid-template-columns:repeat(3,60px);
+    gap:8px;
+    margin-top:10px;
     justify-content:center;
-    align-items:center;
-    flex-direction:column;
-
-    background:rgba(0,0,0,0.65);
-
-    backdrop-filter:blur(8px);
 }
 
-.game-over h1{
-    color:white;
-    font-size:84px;
-}
-
-button{
-    margin-top:24px;
-
-    padding:14px 32px;
-
+.touch button{
+    height:60px;
     border:none;
-    border-radius:18px;
-
-    background:
-        linear-gradient(
-            135deg,
-            #3b82f6,
-            #8b5cf6
-        );
-
+    border-radius:10px;
+    background:#334155;
     color:white;
     font-size:20px;
-    font-weight:bold;
-
-    cursor:pointer;
 }
 
-/* スマホ操作 */
-
-.touch-controls{
-    display:none;
-}
-
-@media (max-width:768px){
-
+/* スマホ */
+@media(max-width:600px){
     body{
-        padding:12px;
-        align-items:flex-start;
-    }
-
-    .container{
         flex-direction:column;
-        align-items:center;
-        width:100%;
-    }
-
-    canvas{
-        width:min(92vw,360px);
-        height:auto;
-    }
-
-    .sidebar{
-        width:100%;
-        max-width:360px;
-    }
-
-    .touch-controls{
-
-        display:grid;
-
-        grid-template-columns:
-            repeat(3,80px);
-
-        gap:14px;
-
-        justify-content:center;
-    }
-
-    .tc-btn{
-
-        width:80px;
-        height:80px;
-
-        border:none;
-        border-radius:22px;
-
-        font-size:32px;
-        font-weight:bold;
-
-        color:white;
-
-        background:
-            linear-gradient(
-                135deg,
-                rgba(59,130,246,0.85),
-                rgba(139,92,246,0.85)
-            );
-    }
-
-    .down{
-        grid-column:2;
-    }
-
-    .game-over h1{
-        font-size:48px;
     }
 }
 </style>
 </head>
+
 <body>
 
 <!-- ログイン -->
-
-<div class="login-screen" id="loginScreen">
-
+<div id="loginScreen">
     <div class="login-box">
-
-        <h1>SHARP<br>TETRIS</h1>
-
-        <input
-            type="text"
-            id="playerName"
-            placeholder="YOUR NAME"
-            maxlength="12"
-        />
-
-        <button id="startBtn">
-            START GAME
-        </button>
-
+        <h2>LOGIN</h2>
+        <input id="name" placeholder="NAME">
+        <button id="start">START</button>
     </div>
-
 </div>
 
 <!-- ゲーム -->
+<div>
+    <canvas id="game"></canvas>
 
-<div class="container">
-
-    <canvas id="game" width="300" height="600"></canvas>
-
-    <div class="sidebar">
-
-        <div class="logo">
-            TETRIS
-        </div>
-
-        <div class="panel">
-            <div class="label">PLAYER</div>
-            <div class="value" id="playerDisplay">
-                ---
-            </div>
-        </div>
-
-        <div class="panel">
-            <div class="label">SCORE</div>
-            <div class="value" id="score">0</div>
-        </div>
-
-        <div class="panel">
-            <div class="label">LINES</div>
-            <div class="value" id="lines">0</div>
-        </div>
-
+    <div class="touch">
+        <button id="left">◀</button>
+        <button id="rot">⟳</button>
+        <button id="right">▶</button>
+        <button id="down">▼</button>
     </div>
-
-</div>
-
-<!-- スマホ操作 -->
-
-<div class="touch-controls">
-
-    <button class="tc-btn" id="leftBtn">◀</button>
-
-    <button class="tc-btn" id="rotateBtn">⟳</button>
-
-    <button class="tc-btn" id="rightBtn">▶</button>
-
-    <button class="tc-btn down" id="downBtn">▼</button>
-
-</div>
-
-<!-- GAME OVER -->
-
-<div class="game-over" id="gameOver">
-
-    <h1>GAME OVER</h1>
-
-    <button onclick="restartGame()">
-        RESTART
-    </button>
-
 </div>
 
 <script>
+const COLS = 10;
+const ROWS = 20;
+const BLOCK = 24;
+
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-ctx.scale(30,30);
+canvas.width = COLS * BLOCK;
+canvas.height = ROWS * BLOCK;
 
-const COLS = 10;
-const ROWS = 20;
+const board = Array.from({length:ROWS},()=>Array(COLS).fill(0));
 
-const board = Array.from(
-    {length:ROWS},
-    ()=>Array(COLS).fill(0)
-);
-
-const colors = [
-    null,
-    "#22d3ee",
-    "#3b82f6",
-    "#fb923c",
-    "#fde047",
-    "#4ade80",
-    "#c084fc",
-    "#fb7185"
-];
+const colors = [null,"cyan","blue","orange","yellow","green","purple","red"];
 
 const pieces = [
 [],
@@ -468,349 +138,110 @@ const pieces = [
 [[7,7,0],[0,7,7]]
 ];
 
-const player = {
-    pos:{x:0,y:0},
-    matrix:null
+let player = {
+    x:0,y:0,
+    m:null
 };
 
-let score = 0;
-let lines = 0;
+let drop=0,last=0;
 
-function drawBlock(x,y,color){
-
-    ctx.fillStyle = color;
-    ctx.fillRect(x,y,1,1);
-
-    ctx.fillStyle =
-        "rgba(255,255,255,0.35)";
-
-    ctx.fillRect(
-        x + 0.05,
-        y + 0.05,
-        0.9,
-        0.18
-    );
+function drawBlock(x,y,c){
+    ctx.fillStyle=c;
+    ctx.fillRect(x*BLOCK,y*BLOCK,BLOCK,BLOCK);
 }
 
 function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    board.forEach((row,y)=>{
-
-        row.forEach((value,x)=>{
-
-            if(value){
-
-                drawBlock(
-                    x,
-                    y,
-                    colors[value]
-                );
-            }
+    board.forEach((r,y)=>{
+        r.forEach((v,x)=>{
+            if(v) drawBlock(x,y,colors[v]);
         });
     });
 
-    player.matrix.forEach((row,y)=>{
-
-        row.forEach((value,x)=>{
-
-            if(value){
-
-                drawBlock(
-                    x + player.pos.x,
-                    y + player.pos.y,
-                    colors[value]
-                );
-            }
+    player.m.forEach((r,y)=>{
+        r.forEach((v,x)=>{
+            if(v) drawBlock(x+player.x,y+player.y,colors[v]);
         });
     });
 }
 
 function collide(){
-
-    for(let y=0;y<player.matrix.length;y++){
-
-        for(let x=0;x<player.matrix[y].length;x++){
-
-            const row =
-                board[y + player.pos.y];
-
+    for(let y=0;y<player.m.length;y++){
+        for(let x=0;x<player.m[y].length;x++){
             if(
-                player.matrix[y][x] !== 0 &&
-                (
-                    !row ||
-                    row[x + player.pos.x] !== 0
-                )
+                player.m[y][x] &&
+                (!board[y+player.y] ||
+                board[y+player.y][x+player.x])
             ){
                 return true;
             }
         }
     }
-
     return false;
 }
 
 function merge(){
-
-    player.matrix.forEach((row,y)=>{
-
-        row.forEach((value,x)=>{
-
-            if(value){
-
-                board[
-                    y + player.pos.y
-                ][
-                    x + player.pos.x
-                ] = value;
+    player.m.forEach((r,y)=>{
+        r.forEach((v,x)=>{
+            if(v){
+                board[y+player.y][x+player.x]=v;
             }
         });
     });
 }
 
-function rotate(matrix){
-
-    return matrix[0].map((_,i)=>
-        matrix.map(row=>row[i]).reverse()
-    );
+function rotate(m){
+    return m[0].map((_,i)=>m.map(r=>r[i]).reverse());
 }
 
-function playerRotate(){
-
-    const old = player.matrix;
-
-    player.matrix = rotate(player.matrix);
-
-    if(collide()){
-        player.matrix = old;
-    }
+function reset(){
+    player.m = pieces[Math.random()*7|0+1];
+    player.x = 3;
+    player.y = 0;
+    if(collide()) location.reload();
 }
 
-function playerMove(dir){
-
-    player.pos.x += dir;
-
+function dropPiece(){
+    player.y++;
     if(collide()){
-        player.pos.x -= dir;
-    }
-}
-
-function playerDrop(){
-
-    player.pos.y++;
-
-    if(collide()){
-
-        player.pos.y--;
-
+        player.y--;
         merge();
-
-        clearLines();
-
-        resetPlayer();
-    }
-
-    dropCounter = 0;
-}
-
-function clearLines(){
-
-    outer:
-    for(let y=ROWS-1;y>=0;y--){
-
-        for(let x=0;x<COLS;x++){
-
-            if(board[y][x]===0){
-                continue outer;
-            }
-        }
-
-        const row =
-            board.splice(y,1)[0].fill(0);
-
-        board.unshift(row);
-
-        score += 100;
-        lines++;
-
-        document.getElementById("score")
-            .textContent = score;
-
-        document.getElementById("lines")
-            .textContent = lines;
-
-        y++;
+        reset();
     }
 }
 
-function resetPlayer(){
-
-    const type =
-        Math.floor(Math.random()*7)+1;
-
-    player.matrix = pieces[type];
-
-    player.pos.y = 0;
-
-    player.pos.x =
-        (COLS/2 |0) -
-        (player.matrix[0].length/2 |0);
-
-    if(collide()){
-
-        document.getElementById("gameOver")
-            .style.display = "flex";
+function update(t=0){
+    drop += t-last;
+    last = t;
+    if(drop>600){
+        dropPiece();
+        drop=0;
     }
-}
-
-function restartGame(){
-
-    for(let y=0;y<ROWS;y++){
-        board[y].fill(0);
-    }
-
-    score = 0;
-    lines = 0;
-
-    document.getElementById("score")
-        .textContent = 0;
-
-    document.getElementById("lines")
-        .textContent = 0;
-
-    document.getElementById("gameOver")
-        .style.display = "none";
-
-    resetPlayer();
-}
-
-let dropCounter = 0;
-let lastTime = 0;
-
-function update(time=0){
-
-    const delta = time - lastTime;
-
-    lastTime = time;
-
-    dropCounter += delta;
-
-    if(dropCounter > 700){
-        playerDrop();
-    }
-
     draw();
-
     requestAnimationFrame(update);
 }
 
-/* キーボード */
-
+/* 操作 */
 document.addEventListener("keydown",e=>{
-
-    if(e.key==="ArrowLeft"){
-        playerMove(-1);
-    }
-
-    else if(e.key==="ArrowRight"){
-        playerMove(1);
-    }
-
-    else if(e.key==="ArrowDown"){
-        playerDrop();
-    }
-
-    else if(e.key==="ArrowUp"){
-        playerRotate();
-    }
+    if(e.key=="ArrowLeft") player.x--;
+    if(e.key=="ArrowRight") player.x++;
+    if(e.key=="ArrowUp") player.m=rotate(player.m);
+    if(e.key=="ArrowDown") dropPiece();
 });
 
-/* タッチ操作 */
-
-document
-.getElementById("leftBtn")
-.addEventListener("touchstart",e=>{
-
-    e.preventDefault();
-    playerMove(-1);
-});
-
-document
-.getElementById("rightBtn")
-.addEventListener("touchstart",e=>{
-
-    e.preventDefault();
-    playerMove(1);
-});
-
-document
-.getElementById("rotateBtn")
-.addEventListener("touchstart",e=>{
-
-    e.preventDefault();
-    playerRotate();
-});
-
-document
-.getElementById("downBtn")
-.addEventListener("touchstart",e=>{
-
-    e.preventDefault();
-    playerDrop();
-});
+/* タッチ */
+left.onclick=()=>player.x--;
+right.onclick=()=>player.x++;
+rot.onclick=()=>player.m=rotate(player.m);
+down.onclick=()=>dropPiece();
 
 /* ログイン */
-
-let playerName = "";
-
-document
-.getElementById("startBtn")
-.addEventListener("click",startGame);
-
-document
-.getElementById("playerName")
-.addEventListener("keydown",e=>{
-
-    if(e.key === "Enter"){
-        startGame();
-    }
-});
-
-function startGame(){
-
-    const input =
-        document
-        .getElementById("playerName");
-
-    playerName =
-        input.value.trim() || "PLAYER";
-
-    document
-        .getElementById("playerDisplay")
-        .textContent = playerName;
-
-    const login =
-        document
-        .getElementById("loginScreen");
-
-    login.style.opacity = "0";
-
-    setTimeout(()=>{
-
-        login.style.display = "none";
-
-        resetPlayer();
-
-        update();
-
-    },400);
-}
+start.onclick=()=>{
+    document.getElementById("loginScreen").style.display="none";
+    reset();
+    update();
+};
 </script>
 
 </body>
